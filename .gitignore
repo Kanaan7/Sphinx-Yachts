@@ -1,0 +1,14 @@
+# Node
+node_modules/
+
+# Env files
+backend/.env
+
+# React build
+frontend/build/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
