@@ -1,11 +1,13 @@
 // backend/index.js
-require('dotenv').config();
-const express   = require('express');
-const cors      = require('cors');
-const mongoose  = require('mongoose');
-const nodemailer= require('nodemailer');
 
-const bookingRoutes = require('./routes/bookings');
+require('dotenv').config();
+const express    = require('express');
+const cors       = require('cors');
+const mongoose   = require('mongoose');
+const nodemailer = require('nodemailer');
+const path       = require('path');
+
+const bookingRoutes = require('./routes/booking');
 
 const app = express();
 app.use(cors());
@@ -27,7 +29,6 @@ app.post('/api/contact', async (req, res) => {
     return res.status(400).json({ error: 'All fields required' });
   }
 
-  // 3a) Set up nodemailer transporter
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
@@ -38,7 +39,6 @@ app.post('/api/contact', async (req, res) => {
     }
   });
 
-  // 3b) Send mail to owner
   try {
     await transporter.sendMail({
       from: `"Website Contact" <${process.env.EMAIL_USER}>`,
@@ -54,7 +54,6 @@ Message:
 ${message}
       `.trim()
     });
-
     return res.json({ success: true });
   } catch (err) {
     console.error('💥 Mail error:', err);
@@ -62,7 +61,13 @@ ${message}
   }
 });
 
-// 4) Start server
+// 4) Serve React build for all non-API routes
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
+
+// 5) Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

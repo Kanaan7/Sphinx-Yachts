@@ -2,7 +2,7 @@
 node_modules/
 
 # Env files
-backend/.env
+/.env
 
 # React build
 frontend/build/
