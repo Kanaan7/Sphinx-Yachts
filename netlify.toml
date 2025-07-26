@@ -1,13 +1,8 @@
-# netlify.toml
 [build]
-  # Tell Netlify to run in the 'frontend' subfolder
   base    = "frontend"
-  # Install & build your React app
   command = "npm install && npm run build"
-  # Publish the build output
-  publish = "frontend/build"
+  publish = "build"    # <-- NOT "frontend/build" when base="frontend"
 
-# Proxy any /api calls to your Railway backend
 [[redirects]]
   from   = "/api/*"
   to     = "https://sphinx-yachts-production.up.railway.app/api/:splat"
