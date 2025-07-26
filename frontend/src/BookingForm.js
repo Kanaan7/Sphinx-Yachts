@@ -1,153 +1,163 @@
-// frontend/src/BookingForm.js
+// frontend/src/components/BookingForm.js
 
 import React, { useState } from 'react';
 import {
-  Container,
+  Box,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
   MenuItem,
   Button,
   Typography,
-  Box
 } from '@mui/material';
-import axios from 'axios';
 
-const VEHICLES = [
-  { value: 'boat_15', label: '15-Person Yacht ($400/hr)' },
-  { value: 'boat_20', label: '20-Person Yacht ($400/hr)' },
-  { value: 'boat_25', label: '25-Person Yacht ($400/hr)' },
-  { value: 'jetski', label: 'Jet Ski ($150/hr)' }
-];
+const BookingForm = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [vehicleType, setVehicleType] = useState('');
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [error, setError] = useState('');
 
-export default function BookingForm() {
-  const [form, setForm] = useState({
-    customerName: '',
-    customerEmail: '',
-    vehicleType: '',
-    date: '',
-    startTime: '',
-    endTime: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage('');
-    try {
-      const { data } = await axios.post('/api/bookings', {
-        ...form,
-        hours:
-          (new Date(`${form.date}T${form.endTime}`) -
-           new Date(`${form.date}T${form.startTime}`)) /
-          (1000 * 60 * 60)
-      });
-      setMessage(`Booking confirmed! Total cost: $${data.totalCost}`);
-    } catch (err) {
-      setMessage(err.response?.data?.error || 'Failed to submit booking.');
+    setError('');
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        vehicleType,
+        date,
+        startTime,
+        endTime,
+        paymentMethod,
+      }),
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      setError(payload.error || 'Booking failed');
+      return;
     }
-    setLoading(false);
+    alert('✅ Booking successful!');
+    // Optionally clear the form:
+    setName('');
+    setEmail('');
+    setVehicleType('');
+    setDate('');
+    setStartTime('');
+    setEndTime('');
+    setPaymentMethod('');
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 6 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{
+        maxWidth: 400,
+        mx: 'auto',
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        boxShadow: 3,
+      }}
+    >
+      <Typography variant="h5" align="center">
         Book Your Ride
       </Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        <TextField
-          label="Your Name"
-          name="customerName"
-          value={form.customerName}
-          onChange={handleChange}
-          fullWidth
-          required
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          label="Email Address"
-          name="customerEmail"
-          value={form.customerEmail}
-          onChange={handleChange}
-          type="email"
-          fullWidth
-          required
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          select
-          label="Select Vehicle"
-          name="vehicleType"
-          value={form.vehicleType}
-          onChange={handleChange}
-          fullWidth
-          required
-          sx={{ mb: 2 }}
-        >
-          {VEHICLES.map(v => (
-            <MenuItem key={v.value} value={v.value}>
-              {v.label}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          label="Date"
-          name="date"
-          value={form.date}
-          onChange={handleChange}
-          type="date"
-          fullWidth
-          required
-          InputLabelProps={{ shrink: true }}
-          sx={{ mb: 2 }}
-        />
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <TextField
-            label="Start Time"
-            name="startTime"
-            value={form.startTime}
-            onChange={handleChange}
-            type="time"
-            required
-            InputLabelProps={{ shrink: true }}
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            label="End Time"
-            name="endTime"
-            value={form.endTime}
-            onChange={handleChange}
-            type="time"
-            required
-            InputLabelProps={{ shrink: true }}
-            sx={{ flex: 1 }}
-          />
-        </Box>
 
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={loading}
-          sx={{
-            mt: 2,
-            backgroundColor: '#C49B66',    // override to your gold
-            '&:hover': { backgroundColor: '#B38A5A' }
-          }}
-        >
-          {loading ? 'Submitting…' : 'Submit Booking'}
-        </Button>
+      {error && (
+        <Typography color="error" variant="body2">
+          {error}
+        </Typography>
+      )}
 
-        {message && (
-          <Typography sx={{ mt: 3 }} color="text.secondary">
-            {message}
-          </Typography>
-        )}
-      </Box>
-    </Container>
+      <TextField
+        label="Full Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+      />
+
+      <TextField
+        label="Email Address"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+
+      <FormControl required>
+        <InputLabel id="vehicle-label">Vehicle</InputLabel>
+        <Select
+          labelId="vehicle-label"
+          label="Vehicle"
+          value={vehicleType}
+          onChange={(e) => setVehicleType(e.target.value)}
+        >
+          <MenuItem value="15-person Yacht">15‑person Yacht</MenuItem>
+          <MenuItem value="20-person Yacht">20‑person Yacht</MenuItem>
+          <MenuItem value="25-person Yacht">25‑person Yacht</MenuItem>
+          <MenuItem value="Jet Ski">Jet Ski</MenuItem>
+        </Select>
+      </FormControl>
+
+      <TextField
+        label="Date"
+        type="date"
+        InputLabelProps={{ shrink: true }}
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        required
+      />
+
+      <TextField
+        label="Start Time"
+        type="time"
+        InputLabelProps={{ shrink: true }}
+        inputProps={{ step: 300 }} // 5-minute steps
+        value={startTime}
+        onChange={(e) => setStartTime(e.target.value)}
+        required
+      />
+
+      <TextField
+        label="End Time"
+        type="time"
+        InputLabelProps={{ shrink: true }}
+        inputProps={{ step: 300 }}
+        value={endTime}
+        onChange={(e) => setEndTime(e.target.value)}
+        required
+      />
+
+      <FormControl required>
+        <InputLabel id="payment-label">Payment Method</InputLabel>
+        <Select
+          labelId="payment-label"
+          label="Payment Method"
+          value={paymentMethod}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+        >
+          <MenuItem value="Credit Card">Credit Card</MenuItem>
+          <MenuItem value="PayPal">PayPal</MenuItem>
+          <MenuItem value="Cash">Cash on Pickup</MenuItem>
+        </Select>
+      </FormControl>
+
+      <Button type="submit" variant="contained" size="large">
+        Book Now
+      </Button>
+    </Box>
   );
-}
+};
+
+export default BookingForm;
