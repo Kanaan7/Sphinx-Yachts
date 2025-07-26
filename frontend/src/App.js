@@ -24,6 +24,7 @@ import FleetPage from './FleetPage';
 import AvailabilityPage from './AvailabilityPage';
 import BookingForm from './BookingForm';
 import ContactPage from './ContactPage';
+import MyBookings from './pages/MyBookings';
 
 function NavTabs() {
   const location = useLocation();
@@ -36,14 +37,22 @@ function NavTabs() {
       case '/fleet':        setValue(1); break;
       case '/availability': setValue(2); break;
       case '/booking':      setValue(3); break;
-      case '/contact':      setValue(4); break;
+      case '/my-bookings':  setValue(4); break;
+      case '/contact':      setValue(5); break;
       default:              setValue(false);
     }
   }, [location.pathname]);
 
   const handleChange = (_e, newValue) => {
     setValue(newValue);
-    const paths = ['/', '/fleet', '/availability', '/booking', '/contact'];
+    const paths = [
+      '/', 
+      '/fleet', 
+      '/availability', 
+      '/booking', 
+      '/my-bookings', 
+      '/contact'
+    ];
     navigate(paths[newValue] || '/');
   };
 
@@ -63,6 +72,7 @@ function NavTabs() {
       <Tab label="Fleet" />
       <Tab label="Availability" />
       <Tab label="Book Now" />
+      <Tab label="My Bookings" />
       <Tab label="Contact" />
     </Tabs>
   );
@@ -88,12 +98,13 @@ export default function App() {
         </AppBar>
 
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/fleet" element={<FleetPage />} />
+          <Route path="/"             element={<Home />} />
+          <Route path="/fleet"        element={<FleetPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />
-          <Route path="/booking" element={<BookingForm />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/booking"      element={<BookingForm />} />
+          <Route path="/my-bookings"  element={<MyBookings />} />
+          <Route path="/contact"      element={<ContactPage />} />
+          <Route path="*"             element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
