@@ -5,7 +5,6 @@ const express    = require('express');
 const cors       = require('cors');
 const mongoose   = require('mongoose');
 const nodemailer = require('nodemailer');
-const path       = require('path');
 
 const bookingRoutes = require('./routes/booking');
 
@@ -61,14 +60,8 @@ ${message}
   }
 });
 
-// 4) Serve React build for all non-API routes
-app.use(express.static(path.join(__dirname, '../frontend/build')));
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});
-
-// 5) Start server
+// 4) Start server (API only)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
