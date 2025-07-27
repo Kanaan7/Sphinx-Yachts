@@ -23,9 +23,8 @@ import Home             from './Home';
 import FleetPage        from './FleetPage';
 import AvailabilityPage from './AvailabilityPage';
 import BookingForm      from './BookingForm';
+import MyBookings       from './MyBookings';     // ← updated path
 import ContactPage      from './ContactPage';
-import MyBookings       from './MyBookings';
-
 
 function NavTabs() {
   const location = useLocation();
