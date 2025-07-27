@@ -1,18 +1,26 @@
 // frontend/src/ContactPage.js
+
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Snackbar, Alert } from '@mui/material';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Snackbar,
+  Alert
+} from '@mui/material';
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [form, setForm] = useState({ name:'', email:'', message:'' });
   const [loading, setLoading] = useState(false);
-  const [snack, setSnack]   = useState({ open: false, severity: 'success', message: '' });
+  const [snack, setSnack]   = useState({ open:false, severity:'success', message:'' });
 
   const handleChange = e =>
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleClose = (_, reason) => {
     if (reason === 'clickaway') return;
-    setSnack(s => ({ ...s, open: false }));
+    setSnack(s => ({ ...s, open:false }));
   };
 
   const handleSubmit = async e => {
@@ -20,16 +28,16 @@ export default function ContactPage() {
     setLoading(true);
     try {
       const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify(form)
       });
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.error || 'Submission failed');
-      setSnack({ open: true, severity: 'success', message: 'Message sent!' });
+      setSnack({ open:true, severity:'success', message:'Message sent!' });
       setForm({ name:'', email:'', message:'' });
     } catch (err) {
-      setSnack({ open: true, severity: 'error', message: err.message });
+      setSnack({ open:true, severity:'error', message:err.message });
     } finally {
       setLoading(false);
     }
@@ -38,49 +46,49 @@ export default function ContactPage() {
   return (
     <>
       <Box
-        component="form"
-        onSubmit={handleSubmit}
         sx={{
-          maxWidth: 600, mx: 'auto', mt:4, p:3, display:'flex',
-          flexDirection:'column', gap:2, bgcolor:'background.paper',
-          borderRadius:2, boxShadow:3
+          maxWidth:600, mx:'auto', mt:4, p:3,
+          bgcolor:'background.paper', borderRadius:2, boxShadow:3
         }}
       >
-        <Typography variant="h4" align="center">Get in Touch</Typography>
-
-        <TextField
-          label="Your Name"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          required
-        />
-        <TextField
-          label="Email Address"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
-        <TextField
-          label="Message"
-          name="message"
-          multiline
-          rows={4}
-          value={form.message}
-          onChange={handleChange}
-          required
-        />
-
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          disabled={loading}
-        >
-          {loading ? 'Sending…' : 'Send Message'}
-        </Button>
+        <Typography variant="h4" align="center" gutterBottom>
+          Get in Touch
+        </Typography>
+        <form onSubmit={handleSubmit} noValidate>
+          <Box sx={{ display:'flex', flexDirection:'column', gap:2 }}>
+            <TextField
+              label="Your Name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              label="Email Address"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              label="Message"
+              name="message"
+              multiline rows={4}
+              value={form.message}
+              onChange={handleChange}
+              required
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={loading}
+            >
+              {loading ? 'Sending…' : 'Send Message'}
+            </Button>
+          </Box>
+        </form>
       </Box>
 
       <Snackbar
