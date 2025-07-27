@@ -9,24 +9,29 @@ import {
   MenuItem,
   Alert,
   Box,
-  Typography
+  Typography,
+  CircularProgress,
+  List,
+  ListItem
 } from '@mui/material';
 
-// Helper to compute free slots between 08:00–20:00 given booked intervals
+// Helper: turn "HH:MM" ↔ minutes since midnight
+const toMinutes = t => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+const toTimeString = mins => {
+  const h = String(Math.floor(mins / 60)).padStart(2, '0');
+  const m = String(mins % 60).padStart(2, '0');
+  return `${h}:${m}`;
+};
+
+// Compute free slots between 08:00–20:00 from an array of bookings
 function computeFreeSlots(bookings) {
-  const toMinutes = t => {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-  };
-  const toTimeString = mins => {
-    const h = Math.floor(mins / 60).toString().padStart(2, '0');
-    const m = (mins % 60).toString().padStart(2, '0');
-    return `${h}:${m}`;
-  };
   const businessStart = toMinutes('08:00');
   const businessEnd   = toMinutes('20:00');
 
-  // Map & sort bookings
+  // Map booking intervals, sorted by start
   const sorted = bookings
     .map(b => ({
       start: toMinutes(b.startTime),
@@ -34,57 +39,52 @@ function computeFreeSlots(bookings) {
     }))
     .sort((a, b) => a.start - b.start);
 
-  const freeSlots = [];
+  const free = [];
   let pointer = businessStart;
 
   for (const b of sorted) {
     if (b.start > pointer) {
-      freeSlots.push({
-        start: toTimeString(pointer),
-        end:   toTimeString(b.start)
-      });
+      free.push({ start: toTimeString(pointer), end: toTimeString(b.start) });
     }
     pointer = Math.max(pointer, b.end);
   }
-
   if (pointer < businessEnd) {
-    freeSlots.push({
-      start: toTimeString(pointer),
-      end:   toTimeString(businessEnd)
-    });
+    free.push({ start: toTimeString(pointer), end: toTimeString(businessEnd) });
   }
-
-  return freeSlots;
+  return free;
 }
 
 export default function AvailabilityPage() {
   const [date, setDate]               = useState('');
   const [vehicleType, setVehicleType] = useState('15-person Yacht');
   const [slots, setSlots]             = useState([]);
+  const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
 
   useEffect(() => {
-    if (!date || !vehicleType) return;
-
+    if (!date) return;
     setError('');
-    (async () => {
-      try {
-        const res = await fetch(
-          `/api/bookings?date=${date}&vehicleType=${encodeURIComponent(vehicleType)}`
-        );
-        if (!res.ok) throw new Error((await res.json()).error || 'Error loading availability');
-        const booked = await res.json();
+    setLoading(true);
+
+    fetch(
+      `/api/bookings?date=${date}&vehicleType=${encodeURIComponent(vehicleType)}`
+    )
+      .then(res => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.json();
+      })
+      .then(booked => {
         setSlots(computeFreeSlots(booked));
-      } catch (e) {
-        console.error(e);
+      })
+      .catch(() => {
         setError('Unable to load availability.');
         setSlots([]);
-      }
-    })();
+      })
+      .finally(() => setLoading(false));
   }, [date, vehicleType]);
 
   return (
-    <Box sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
+    <Box sx={{ maxWidth: 400, mx: 'auto', mt: 4, p: 2 }}>
       <Typography variant="h4" align="center" gutterBottom>
         Check Availability
       </Typography>
@@ -113,23 +113,35 @@ export default function AvailabilityPage() {
         </Select>
       </FormControl>
 
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+          <CircularProgress />
+        </Box>
+      )}
+
       {error && (
         <Alert severity="error" sx={{ mt: 3 }}>
           {error}
         </Alert>
       )}
 
-      {!error && slots.length > 0 && (
+      {!loading && !error && slots.length > 0 && (
         <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Available Slots
-          </Typography>
-          {slots.map(slot => (
-            <Typography key={slot.start}>
-              {slot.start} – {slot.end}
-            </Typography>
-          ))}
+          <Typography variant="h6">Available Slots</Typography>
+          <List>
+            {slots.map(({ start, end }) => (
+              <ListItem key={start}>
+                {start} – {end}
+              </ListItem>
+            ))}
+          </List>
         </Box>
+      )}
+
+      {!loading && !error && date && slots.length === 0 && (
+        <Alert severity="info" sx={{ mt: 3 }}>
+          No free slots available for this date & service.
+        </Alert>
       )}
     </Box>
   );
