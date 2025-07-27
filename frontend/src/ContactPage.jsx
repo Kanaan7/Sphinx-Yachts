@@ -1,4 +1,4 @@
-// frontend/src/components/ContactPage.jsx
+// frontend/src/ContactPage.jsx
 
 import React, { useState } from 'react';
 import {
@@ -50,22 +50,29 @@ const ContactPage = () => {
         component="form"
         onSubmit={handleSubmit}
         sx={{
-          maxWidth: 600, mx: 'auto', mt: 4, p: 3,
-          display: 'flex', flexDirection: 'column', gap: 2,
-          bgcolor: 'background.paper', borderRadius: 2, boxShadow: 3
+          maxWidth: 600,
+          mx: 'auto',
+          mt: 4,
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          boxShadow: 3
         }}
       >
-        <Typography variant="h4" align="center">Contact Us</Typography>
+        <Typography variant="h4" align="center">Get in Touch</Typography>
 
         <TextField
-          label="Name"
+          label="Your Name"
           name="name"
           value={form.name}
           onChange={handleChange}
           required
         />
         <TextField
-          label="Email"
+          label="Email Address"
           name="email"
           type="email"
           value={form.email}
