@@ -39,7 +39,7 @@ const BookingForm = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/bookings', {
+      const res = await fetch('https://sphinx-yachts-production.up.railway.app/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -59,9 +59,12 @@ const BookingForm = () => {
       } else {
         setSnack({ open: true, message: 'Booking successful!', severity: 'success' });
         // reset form
-        setName(''); setEmail('');
-        setVehicleType(''); setDate('');
-        setStartTime(''); setEndTime('');
+        setName('');
+        setEmail('');
+        setVehicleType('');
+        setDate('');
+        setStartTime('');
+        setEndTime('');
         setPaymentMethod('');
       }
     } catch {
@@ -85,20 +88,27 @@ const BookingForm = () => {
         <Typography variant="h5" align="center">Book Your Ride</Typography>
 
         <TextField
-          label="Full Name" value={name}
-          onChange={e => setName(e.target.value)} required
+          label="Full Name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
         />
 
         <TextField
-          label="Email Address" type="email" value={email}
-          onChange={e => setEmail(e.target.value)} required
+          label="Email Address"
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
         />
 
         <FormControl required>
           <InputLabel id="vehicle-label">Vehicle</InputLabel>
           <Select
-            labelId="vehicle-label" label="Vehicle"
-            value={vehicleType} onChange={e => setVehicleType(e.target.value)}
+            labelId="vehicle-label"
+            label="Vehicle"
+            value={vehicleType}
+            onChange={e => setVehicleType(e.target.value)}
           >
             <MenuItem value="15-person Yacht">15‑person Yacht</MenuItem>
             <MenuItem value="20-person Yacht">20‑person Yacht</MenuItem>
@@ -108,31 +118,45 @@ const BookingForm = () => {
         </FormControl>
 
         <TextField
-          label="Date" type="date" InputLabelProps={{ shrink: true }}
-          value={date} onChange={e => setDate(e.target.value)} required
+          label="Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          required
         />
 
         <TextField
-          label="Start Time" type="time" InputLabelProps={{ shrink: true }}
-          inputProps={{ step: 300 }} value={startTime}
-          onChange={e => setStartTime(e.target.value)} required
+          label="Start Time"
+          type="time"
+          InputLabelProps={{ shrink: true }}
+          inputProps={{ step: 300 }}
+          value={startTime}
+          onChange={e => setStartTime(e.target.value)}
+          required
         />
 
         <TextField
-          label="End Time" type="time" InputLabelProps={{ shrink: true }}
-          inputProps={{ step: 300 }} value={endTime}
-          onChange={e => setEndTime(e.target.value)} required
+          label="End Time"
+          type="time"
+          InputLabelProps={{ shrink: true }}
+          inputProps={{ step: 300 }}
+          value={endTime}
+          onChange={e => setEndTime(e.target.value)}
+          required
         />
 
         <FormControl required>
           <InputLabel id="payment-label">Payment Method</InputLabel>
           <Select
-            labelId="payment-label" label="Payment Method"
-            value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
+            labelId="payment-label"
+            label="Payment Method"
+            value={paymentMethod}
+            onChange={e => setPaymentMethod(e.target.value)}
           >
             <MenuItem value="Credit Card">Credit Card</MenuItem>
             <MenuItem value="PayPal">PayPal</MenuItem>
-            <MenuItem value="Cash">Cash on Pickup</MenuItem>
+            <MenuItem value="Cash">Cash</MenuItem>
           </Select>
         </FormControl>
 
