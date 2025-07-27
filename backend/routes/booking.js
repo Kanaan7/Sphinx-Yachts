@@ -5,11 +5,11 @@ const router     = express.Router();
 const Booking    = require('../models/Booking');
 const nodemailer = require('nodemailer');
 
-// Configure a single shared transporter using your SMTP env vars
+// Shared transporter (STARTTLS on port 587)
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT),
-  secure: false,  // use STARTTLS
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -17,8 +17,6 @@ const transporter = nodemailer.createTransport({
 });
 
 // POST /api/bookings
-//  • Saves the booking
-//  • Attempts to email the owner & the user without blocking on failure
 router.post('/', async (req, res) => {
   const { name, email, vehicleType, date, startTime, endTime, paymentMethod } = req.body;
   if (!name || !email || !vehicleType || !date || !startTime || !endTime || !paymentMethod) {
@@ -26,11 +24,11 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    // 1) Save booking to MongoDB
+    // 1) Save booking
     const booking = await Booking.create({ name, email, vehicleType, date, startTime, endTime, paymentMethod });
 
-    // 2) Send owner notification (log but don’t throw)
-    const ownerMail = transporter.sendMail({
+    // 2) Notify owner (errors logged, not thrown)
+    transporter.sendMail({
       from: `"Sphinx Yachts" <${process.env.EMAIL_USER}>`,
       to: process.env.OWNER_EMAIL,
       subject: `New booking from ${name}`,
@@ -46,8 +44,8 @@ router.post('/', async (req, res) => {
       `
     }).catch(err => console.error('❌ Owner email failed:', err));
 
-    // 3) Send user confirmation (log but don’t throw)
-    const userMail = transporter.sendMail({
+    // 3) Confirmation to user
+    transporter.sendMail({
       from: `"Sphinx Yachts" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Your Sphinx Yachts Booking Confirmation',
@@ -66,10 +64,7 @@ router.post('/', async (req, res) => {
       `
     }).catch(err => console.error('❌ Confirmation email failed:', err));
 
-    // wait for both attempts (optional)
-    await Promise.all([ownerMail, userMail]);
-
-    // 4) Respond with the created booking
+    // 4) Always respond success
     return res.status(201).json(booking);
 
   } catch (err) {
@@ -79,16 +74,14 @@ router.post('/', async (req, res) => {
 });
 
 // GET /api/bookings?email=…&id=…
-// Lookup bookings by user email and/or booking ID
 router.get('/', async (req, res) => {
   const { email, id } = req.query;
   if (!email && !id) {
     return res.status(400).json({ error: 'Provide email and/or id' });
   }
-
   const filter = {};
   if (email) filter.email = email;
-  if (id)    filter._id    = id;
+  if (id)    filter._id   = id;
 
   try {
     const bookings = await Booking.find(filter).sort({ date: 1 });
