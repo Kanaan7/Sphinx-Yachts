@@ -82,12 +82,10 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   const { date, vehicleType, email, id } = req.query;
 
-  // Determine intent
-  if (date && vehicleType) {
-    // availability lookup
-  } else if (email || id) {
-    // my‑bookings lookup
-  } else {
+  const isAvailability = date && vehicleType;
+  const isLookup       = email || id;
+
+  if (!isAvailability && !isLookup) {
     return res
       .status(400)
       .json({ error: 'Provide date+vehicleType for availability OR email/id for bookings' });
@@ -95,7 +93,7 @@ router.get('/', async (req, res) => {
 
   // Build filter
   const filter = {};
-  if (date && vehicleType) {
+  if (isAvailability) {
     filter.date        = date;
     filter.vehicleType = vehicleType;
   }
@@ -104,10 +102,18 @@ router.get('/', async (req, res) => {
 
   try {
     const bookings = await Booking.find(filter).sort({ startTime: 1 });
+
+    // Availability mode: always return 200 + array (even empty)
+    if (isAvailability) {
+      return res.json(bookings);
+    }
+
+    // Lookup mode: 404 if none
     if (!bookings.length) {
       return res.status(404).json({ error: 'No bookings found' });
     }
     return res.json(bookings);
+
   } catch (err) {
     console.error('Lookup error:', err);
     return res.status(500).json({ error: 'Server error' });
