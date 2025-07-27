@@ -1,4 +1,4 @@
-// frontend/src/ContactPage.jsx
+// frontend/src/ContactPage.js
 
 import React, { useState } from 'react';
 import {
@@ -10,12 +10,12 @@ import {
   Alert
 } from '@mui/material';
 
-const ContactPage = () => {
+export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState({ open: false, severity: 'success', message: '' });
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
 
@@ -24,7 +24,7 @@ const ContactPage = () => {
     setSnack(s => ({ ...s, open: false }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -111,6 +111,4 @@ const ContactPage = () => {
       </Snackbar>
     </>
   );
-};
-
-export default ContactPage;
+}
