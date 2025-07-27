@@ -2,135 +2,135 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Typography,
-  Box,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
   MenuItem,
-  List,
-  ListItem,
-  ListItemText,
   Alert,
-  Divider
+  Box,
+  Typography
 } from '@mui/material';
-import axios from 'axios';
 
-const SERVICES = [
-  { key: 'boat_15', label: '15-Person Yacht' },
-  { key: 'boat_20', label: '20-Person Yacht' },
-  { key: 'boat_25', label: '25-Person Yacht' },
-  { key: 'jetski',  label: 'Jet Ski' }
-];
+// Helper to compute free slots between 08:00–20:00 given booked intervals
+function computeFreeSlots(bookings) {
+  const toMinutes = t => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const toTimeString = mins => {
+    const h = Math.floor(mins / 60).toString().padStart(2, '0');
+    const m = (mins % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+  };
+  const businessStart = toMinutes('08:00');
+  const businessEnd   = toMinutes('20:00');
 
-// Define your daily business hours
-const BUSINESS_HOURS = { start: '08:00', end: '20:00' };
+  // Map & sort bookings
+  const sorted = bookings
+    .map(b => ({
+      start: toMinutes(b.startTime),
+      end:   toMinutes(b.endTime)
+    }))
+    .sort((a, b) => a.start - b.start);
 
-export default function AvailabilityPage() {
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [service, setService] = useState(SERVICES[0].key);
-  const [availability, setAvailability] = useState({});
-  const [error, setError] = useState('');
+  const freeSlots = [];
+  let pointer = businessStart;
 
-  // Helper: compute free intervals given booked ones
-  function computeFreeSlots(booked = []) {
-    const slots = [];
-    let cursor = BUSINESS_HOURS.start;
-
-    booked
-      .sort((a, b) => a.startTime.localeCompare(b.startTime))
-      .forEach(({ startTime, endTime }) => {
-        if (cursor < startTime) {
-          slots.push({ start: cursor, end: startTime });
-        }
-        cursor = endTime;
+  for (const b of sorted) {
+    if (b.start > pointer) {
+      freeSlots.push({
+        start: toTimeString(pointer),
+        end:   toTimeString(b.start)
       });
-
-    if (cursor < BUSINESS_HOURS.end) {
-      slots.push({ start: cursor, end: BUSINESS_HOURS.end });
     }
-    return slots;
+    pointer = Math.max(pointer, b.end);
   }
 
-  useEffect(() => {
-    setError('');
-    axios
-      .get(`/api/bookings/availability?date=${date}`)
-      .then(res => setAvailability(res.data))
-      .catch(() => {
-        setError('Unable to load availability.');
-        setAvailability({});
-      });
-  }, [date]);
+  if (pointer < businessEnd) {
+    freeSlots.push({
+      start: toTimeString(pointer),
+      end:   toTimeString(businessEnd)
+    });
+  }
 
-  const bookedSlots = availability[service] || [];
-  const freeSlots   = computeFreeSlots(bookedSlots);
+  return freeSlots;
+}
+
+export default function AvailabilityPage() {
+  const [date, setDate]               = useState('');
+  const [vehicleType, setVehicleType] = useState('15-person Yacht');
+  const [slots, setSlots]             = useState([]);
+  const [error, setError]             = useState('');
+
+  useEffect(() => {
+    if (!date || !vehicleType) return;
+
+    setError('');
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/bookings?date=${date}&vehicleType=${encodeURIComponent(vehicleType)}`
+        );
+        if (!res.ok) throw new Error((await res.json()).error || 'Error loading availability');
+        const booked = await res.json();
+        setSlots(computeFreeSlots(booked));
+      } catch (e) {
+        console.error(e);
+        setError('Unable to load availability.');
+        setSlots([]);
+      }
+    })();
+  }, [date, vehicleType]);
 
   return (
-    <Container sx={{ py: 6 }}>
+    <Box sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
       <Typography variant="h4" align="center" gutterBottom>
         Check Availability
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', mb: 4 }}>
-        <TextField
-          label="Date"
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
+      <TextField
+        label="Date"
+        type="date"
+        InputLabelProps={{ shrink: true }}
+        value={date}
+        onChange={e => setDate(e.target.value)}
+        fullWidth
+      />
 
-        <TextField
-          select
+      <FormControl fullWidth sx={{ mt: 2 }}>
+        <InputLabel id="service-label">Service</InputLabel>
+        <Select
+          labelId="service-label"
           label="Service"
-          value={service}
-          onChange={e => setService(e.target.value)}
+          value={vehicleType}
+          onChange={e => setVehicleType(e.target.value)}
         >
-          {SERVICES.map(s => (
-            <MenuItem key={s.key} value={s.key}>
-              {s.label}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Box>
+          <MenuItem value="15-person Yacht">15‑person Yacht</MenuItem>
+          <MenuItem value="20-person Yacht">20‑person Yacht</MenuItem>
+          <MenuItem value="25-person Yacht">25‑person Yacht</MenuItem>
+          <MenuItem value="Jet Ski">Jet Ski</MenuItem>
+        </Select>
+      </FormControl>
 
-      {error && <Alert severity="error">{error}</Alert>}
-
-      {!error && (
-        <>
-          <Typography variant="h6">
-            Booked for {SERVICES.find(s => s.key===service).label} on {date}
-          </Typography>
-          {bookedSlots.length ? (
-            <List dense>
-              {bookedSlots.map((slot, i) => (
-                <ListItem key={i}>
-                  <ListItemText primary={`${slot.startTime} – ${slot.endTime}`} />
-                </ListItem>
-              ))}
-            </List>
-          ) : (
-            <Typography>No bookings — fully available!</Typography>
-          )}
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="h6">
-            Free Slots ({BUSINESS_HOURS.start}–{BUSINESS_HOURS.end})
-          </Typography>
-          {freeSlots.length ? (
-            <List dense>
-              {freeSlots.map((slot, i) => (
-                <ListItem key={i}>
-                  <ListItemText primary={`${slot.start} – ${slot.end}`} />
-                </ListItem>
-              ))}
-            </List>
-          ) : (
-            <Typography>Sorry, no free time left today.</Typography>
-          )}
-        </>
+      {error && (
+        <Alert severity="error" sx={{ mt: 3 }}>
+          {error}
+        </Alert>
       )}
-    </Container>
+
+      {!error && slots.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Available Slots
+          </Typography>
+          {slots.map(slot => (
+            <Typography key={slot.start}>
+              {slot.start} – {slot.end}
+            </Typography>
+          ))}
+        </Box>
+      )}
+    </Box>
   );
 }
