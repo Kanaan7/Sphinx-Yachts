@@ -1,4 +1,5 @@
 // backend/routes/booking.js
+
 const express    = require('express');
 const router     = express.Router();
 const Booking    = require('../models/Booking');
@@ -8,7 +9,7 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT),
-  secure: false,
+  secure: false,  // use STARTTLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -17,8 +18,7 @@ const transporter = nodemailer.createTransport({
 
 // POST /api/bookings
 //  • Saves the booking
-//  • Emails the owner
-//  • Sends a confirmation to the user
+//  • Attempts to email the owner & the user without blocking on failure
 router.post('/', async (req, res) => {
   const { name, email, vehicleType, date, startTime, endTime, paymentMethod } = req.body;
   if (!name || !email || !vehicleType || !date || !startTime || !endTime || !paymentMethod) {
@@ -27,12 +27,10 @@ router.post('/', async (req, res) => {
 
   try {
     // 1) Save booking to MongoDB
-    const booking = await Booking.create({
-      name, email, vehicleType, date, startTime, endTime, paymentMethod
-    });
+    const booking = await Booking.create({ name, email, vehicleType, date, startTime, endTime, paymentMethod });
 
-    // 2) Notify the owner
-    await transporter.sendMail({
+    // 2) Send owner notification (log but don’t throw)
+    const ownerMail = transporter.sendMail({
       from: `"Sphinx Yachts" <${process.env.EMAIL_USER}>`,
       to: process.env.OWNER_EMAIL,
       subject: `New booking from ${name}`,
@@ -46,10 +44,10 @@ router.post('/', async (req, res) => {
         <p><strong>Payment:</strong> ${paymentMethod}</p>
         <p><strong>ID:</strong> ${booking._id}</p>
       `
-    });
+    }).catch(err => console.error('❌ Owner email failed:', err));
 
-    // 3) Confirmation email to user
-    await transporter.sendMail({
+    // 3) Send user confirmation (log but don’t throw)
+    const userMail = transporter.sendMail({
       from: `"Sphinx Yachts" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Your Sphinx Yachts Booking Confirmation',
@@ -66,13 +64,16 @@ router.post('/', async (req, res) => {
         <p>We look forward to seeing you on the water!</p>
         <p>— The Sphinx Yachts Team</p>
       `
-    });
+    }).catch(err => console.error('❌ Confirmation email failed:', err));
+
+    // wait for both attempts (optional)
+    await Promise.all([ownerMail, userMail]);
 
     // 4) Respond with the created booking
     return res.status(201).json(booking);
 
   } catch (err) {
-    console.error('Booking error:', err);
+    console.error('Booking route error:', err);
     return res.status(500).json({ error: 'Server error' });
   }
 });
