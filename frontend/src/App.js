@@ -22,8 +22,8 @@ import theme from './theme';
 import Home             from './Home';
 import FleetPage        from './FleetPage';
 import AvailabilityPage from './AvailabilityPage';
-import BookingForm      from './components/BookingForm';
-import ContactPage      from './components/ContactPage';
+import BookingForm      from './BookingForm';
+import ContactPage      from './ContactPage';
 import MyBookings       from './pages/MyBookings';
 
 function NavTabs() {
