@@ -1,17 +1,20 @@
-# netlify.toml
+# netlify.toml (at your repo root)
 
 [build]
+  # run from frontend/
   base    = "frontend"
-  command = "npm install && npm run build --prefix frontend"
-  publish = "frontend/build"
+  # install & build your React app
+  command = "npm install && npm run build"
+  # publish from frontend/build
+  publish = "build"
 
-# Proxy our API calls to Railway
+# Proxy API calls to Railway
 [[redirects]]
   from   = "/api/*"
   to     = "https://sphinx-yachts-production.up.railway.app/api/:splat"
   status = 200
 
-# 🚨 Add this catch‑all so every other path serves index.html 🚨
+# Serve index.html for all other routes (SPA fallback)
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
