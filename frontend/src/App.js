@@ -24,7 +24,8 @@ import FleetPage        from './FleetPage';
 import AvailabilityPage from './AvailabilityPage';
 import BookingForm      from './BookingForm';
 import ContactPage      from './ContactPage';
-import MyBookings       from './pages/MyBookings';
+import MyBookings       from './MyBookings';
+
 
 function NavTabs() {
   const location = useLocation();
