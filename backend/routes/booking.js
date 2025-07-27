@@ -5,14 +5,11 @@ const router     = express.Router();
 const Booking    = require('../models/Booking');
 const nodemailer = require('nodemailer');
 
-// Pick a valid sender address from env
-const FROM_EMAIL = process.env.FROM_EMAIL;
-
-// Shared transporter (STARTTLS)
+// Shared transporter for owner & user notifications
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT),
-  secure: false,
+  secure: false, // STARTTLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -20,6 +17,8 @@ const transporter = nodemailer.createTransport({
 });
 
 // POST /api/bookings
+// • Saves booking to MongoDB
+// • Emails owner & sends confirmation to user (errors are logged, not thrown)
 router.post('/', async (req, res) => {
   const { name, email, vehicleType, date, startTime, endTime, paymentMethod } = req.body;
   if (!name || !email || !vehicleType || !date || !startTime || !endTime || !paymentMethod) {
@@ -30,9 +29,9 @@ router.post('/', async (req, res) => {
     // 1) Save booking
     const booking = await Booking.create({ name, email, vehicleType, date, startTime, endTime, paymentMethod });
 
-    // 2) Notify owner (MAIL FROM uses FROM_EMAIL)
+    // 2) Notify owner
     transporter.sendMail({
-      from: `"Sphinx Yachts" <${FROM_EMAIL}>`,
+      from: `"Sphinx Yachts" <${process.env.FROM_EMAIL || process.env.EMAIL_USER}>`,
       to: process.env.OWNER_EMAIL,
       subject: `New booking from ${name}`,
       html: `
@@ -49,7 +48,7 @@ router.post('/', async (req, res) => {
 
     // 3) Confirmation to user
     transporter.sendMail({
-      from: `"Sphinx Yachts" <${FROM_EMAIL}>`,
+      from: `"Sphinx Yachts" <${process.env.FROM_EMAIL || process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Your Sphinx Yachts Booking Confirmation',
       html: `
@@ -67,26 +66,47 @@ router.post('/', async (req, res) => {
       `
     }).catch(err => console.error('❌ Confirmation email failed:', err));
 
-    // 4) Always return success
+    // 4) Respond success
     return res.status(201).json(booking);
+
   } catch (err) {
     console.error('Booking route error:', err);
     return res.status(500).json({ error: 'Server error' });
   }
 });
 
-// GET /api/bookings?email=…&id=…
+// GET /api/bookings
+// Modes:
+//  • Availability:   ?date=YYYY-MM-DD&vehicleType=…
+//  • My Bookings:    ?email=…        OR    ?id=…
 router.get('/', async (req, res) => {
-  const { email, id } = req.query;
-  if (!email && !id) return res.status(400).json({ error: 'Provide email and/or id' });
+  const { date, vehicleType, email, id } = req.query;
 
+  // Determine intent
+  if (date && vehicleType) {
+    // availability lookup
+  } else if (email || id) {
+    // my‑bookings lookup
+  } else {
+    return res
+      .status(400)
+      .json({ error: 'Provide date+vehicleType for availability OR email/id for bookings' });
+  }
+
+  // Build filter
   const filter = {};
+  if (date && vehicleType) {
+    filter.date        = date;
+    filter.vehicleType = vehicleType;
+  }
   if (email) filter.email = email;
   if (id)    filter._id   = id;
 
   try {
-    const bookings = await Booking.find(filter).sort({ date: 1 });
-    if (!bookings.length) return res.status(404).json({ error: 'No bookings found' });
+    const bookings = await Booking.find(filter).sort({ startTime: 1 });
+    if (!bookings.length) {
+      return res.status(404).json({ error: 'No bookings found' });
+    }
     return res.json(bookings);
   } catch (err) {
     console.error('Lookup error:', err);
