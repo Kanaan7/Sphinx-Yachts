@@ -1,9 +1,18 @@
+# netlify.toml
+
 [build]
   base    = "frontend"
-  command = "npm install && npm run build"
-  publish = "build"    # <-- NOT "frontend/build" when base="frontend"
+  command = "npm install && npm run build --prefix frontend"
+  publish = "frontend/build"
 
+# Proxy our API calls to Railway
 [[redirects]]
   from   = "/api/*"
   to     = "https://sphinx-yachts-production.up.railway.app/api/:splat"
+  status = 200
+
+# 🚨 Add this catch‑all so every other path serves index.html 🚨
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
   status = 200
