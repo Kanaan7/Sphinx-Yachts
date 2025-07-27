@@ -13,9 +13,13 @@ import {
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({ open: false, severity: 'success', message: '' });
+  const [snack, setSnack] = useState({
+    open: false,
+    severity: 'success',
+    message: ''
+  });
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
 
@@ -24,7 +28,7 @@ export default function ContactPage() {
     setSnack(s => ({ ...s, open: false }));
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -62,7 +66,9 @@ export default function ContactPage() {
           boxShadow: 3
         }}
       >
-        <Typography variant="h4" align="center">Get in Touch</Typography>
+        <Typography variant="h4" align="center">
+          Get in Touch
+        </Typography>
 
         <TextField
           label="Your Name"
@@ -105,7 +111,11 @@ export default function ContactPage() {
         onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleClose} severity={snack.severity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleClose}
+          severity={snack.severity}
+          sx={{ width: '100%' }}
+        >
           {snack.message}
         </Alert>
       </Snackbar>
