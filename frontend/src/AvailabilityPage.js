@@ -15,7 +15,7 @@ import {
   ListItem
 } from '@mui/material';
 
-// Helper: turn "HH:MM" ↔ minutes since midnight
+// Helpers
 const toMinutes = t => {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
@@ -26,17 +26,12 @@ const toTimeString = mins => {
   return `${h}:${m}`;
 };
 
-// Compute free slots between 08:00–20:00 from an array of bookings
 function computeFreeSlots(bookings) {
   const businessStart = toMinutes('08:00');
   const businessEnd   = toMinutes('20:00');
 
-  // Map booking intervals, sorted by start
   const sorted = bookings
-    .map(b => ({
-      start: toMinutes(b.startTime),
-      end:   toMinutes(b.endTime)
-    }))
+    .map(b => ({ start: toMinutes(b.startTime), end: toMinutes(b.endTime) }))
     .sort((a, b) => a.start - b.start);
 
   const free = [];
@@ -66,14 +61,20 @@ export default function AvailabilityPage() {
     setError('');
     setLoading(true);
 
-    fetch(
-      `/api/bookings?date=${date}&vehicleType=${encodeURIComponent(vehicleType)}`
-    )
-      .then(res => {
-        if (!res.ok) throw new Error(res.statusText);
+    fetch(`/api/bookings?date=${date}&vehicleType=${encodeURIComponent(vehicleType)}`)
+      .then(async res => {
+        if (res.status === 404) {
+          // no bookings → treat as empty array
+          return [];
+        }
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || res.statusText);
+        }
         return res.json();
       })
       .then(booked => {
+        // booked is [] if no reservations
         setSlots(computeFreeSlots(booked));
       })
       .catch(() => {
@@ -140,7 +141,7 @@ export default function AvailabilityPage() {
 
       {!loading && !error && date && slots.length === 0 && (
         <Alert severity="info" sx={{ mt: 3 }}>
-          No free slots available for this date & service.
+          All slots are free for this date & service.
         </Alert>
       )}
     </Box>
