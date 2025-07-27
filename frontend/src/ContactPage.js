@@ -1,42 +1,116 @@
-// frontend/src/ContactPage.js
-import React from 'react';
-import { Container, Typography, TextField, Button, Box } from '@mui/material';
+// frontend/src/ContactPage.jsx
 
-export default function ContactPage() {
+import React, { useState } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Snackbar,
+  Alert
+} from '@mui/material';
+
+const ContactPage = () => {
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [snack, setSnack] = useState({ open: false, severity: 'success', message: '' });
+
+  const handleChange = (e) => {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleClose = (_, reason) => {
+    if (reason === 'clickaway') return;
+    setSnack(s => ({ ...s, open: false }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || 'Submission failed');
+      setSnack({ open: true, severity: 'success', message: 'Message sent!' });
+      setForm({ name: '', email: '', message: '' });
+    } catch (err) {
+      setSnack({ open: true, severity: 'error', message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Container maxWidth="sm" sx={{ py: 6 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        Get in Touch
-      </Typography>
-      <Box component="form" sx={{ mt: 4 }} noValidate>
+    <>
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          maxWidth: 600,
+          mx: 'auto',
+          mt: 4,
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          boxShadow: 3
+        }}
+      >
+        <Typography variant="h4" align="center">Get in Touch</Typography>
+
         <TextField
           label="Your Name"
           name="name"
-          fullWidth
+          value={form.name}
+          onChange={handleChange}
           required
-          sx={{ mb: 2 }}
         />
         <TextField
           label="Email Address"
           name="email"
           type="email"
-          fullWidth
+          value={form.email}
+          onChange={handleChange}
           required
-          sx={{ mb: 2 }}
         />
         <TextField
           label="Message"
           name="message"
           multiline
           rows={4}
-          fullWidth
+          value={form.message}
+          onChange={handleChange}
           required
-          sx={{ mb: 3 }}
         />
-        <Button type="submit" variant="contained" fullWidth>
-          Send Message
+
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={loading}
+        >
+          {loading ? 'Sending…' : 'Send Message'}
         </Button>
       </Box>
-    </Container>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={6000}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleClose} severity={snack.severity} sx={{ width: '100%' }}>
+          {snack.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
-}
+};
+
+export default ContactPage;
