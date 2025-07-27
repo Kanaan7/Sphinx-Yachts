@@ -7,7 +7,7 @@ const mongoose   = require('mongoose');
 const nodemailer = require('nodemailer');
 
 const bookingRoutes = require('./routes/booking');
-const Contact       = require('./models/Contact');
+const paymentRoutes = require('./routes/payment');
 
 const app = express();
 app.use(cors());
@@ -22,26 +22,20 @@ mongoose
 // 2) Booking API
 app.use('/api/bookings', bookingRoutes);
 
-// 3) Contact form endpoint
+// 3) Payments API
+app.use('/api/payments', paymentRoutes);
+
+// 4) Contact form endpoint
 app.post('/api/contact', async (req, res) => {
   const { name, email, message } = req.body;
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'All fields required' });
   }
 
-  // 3a) Persist contact submission to MongoDB
-  try {
-    await Contact.create({ name, email, message });
-  } catch (dbErr) {
-    console.error('❌ Contact save error:', dbErr);
-    // Continue to email even if DB save fails
-  }
-
-  // 3b) Send email to owner
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: Number(process.env.EMAIL_PORT),
-    secure: false, // use STARTTLS
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
@@ -50,7 +44,7 @@ app.post('/api/contact', async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"Website Contact" <${process.env.FROM_EMAIL || process.env.EMAIL_USER}>`,
+      from: `"Website Contact" <${process.env.EMAIL_USER}>`,
       to: process.env.OWNER_EMAIL,
       subject: `New message from ${name}`,
       text: `
@@ -70,7 +64,7 @@ ${message}
   }
 });
 
-// 4) Start server (API only)
+// 5) Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
