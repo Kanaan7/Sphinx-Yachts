@@ -1,34 +1,21 @@
 // frontend/src/ContactPage.js
-
 import React, { useState } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Snackbar,
-  Alert
-} from '@mui/material';
+import { Box, TextField, Button, Typography, Snackbar, Alert } from '@mui/material';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({
-    open: false,
-    severity: 'success',
-    message: ''
-  });
+  const [snack, setSnack]   = useState({ open: false, severity: 'success', message: '' });
 
-  const handleChange = (e) => {
+  const handleChange = e =>
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-  };
 
   const handleClose = (_, reason) => {
     if (reason === 'clickaway') return;
     setSnack(s => ({ ...s, open: false }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -40,7 +27,7 @@ export default function ContactPage() {
       const payload = await res.json();
       if (!res.ok) throw new Error(payload.error || 'Submission failed');
       setSnack({ open: true, severity: 'success', message: 'Message sent!' });
-      setForm({ name: '', email: '', message: '' });
+      setForm({ name:'', email:'', message:'' });
     } catch (err) {
       setSnack({ open: true, severity: 'error', message: err.message });
     } finally {
@@ -54,21 +41,12 @@ export default function ContactPage() {
         component="form"
         onSubmit={handleSubmit}
         sx={{
-          maxWidth: 600,
-          mx: 'auto',
-          mt: 4,
-          p: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          bgcolor: 'background.paper',
-          borderRadius: 2,
-          boxShadow: 3
+          maxWidth: 600, mx: 'auto', mt:4, p:3, display:'flex',
+          flexDirection:'column', gap:2, bgcolor:'background.paper',
+          borderRadius:2, boxShadow:3
         }}
       >
-        <Typography variant="h4" align="center">
-          Get in Touch
-        </Typography>
+        <Typography variant="h4" align="center">Get in Touch</Typography>
 
         <TextField
           label="Your Name"
@@ -109,13 +87,9 @@ export default function ContactPage() {
         open={snack.open}
         autoHideDuration={6000}
         onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical:'bottom', horizontal:'center' }}
       >
-        <Alert
-          onClose={handleClose}
-          severity={snack.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleClose} severity={snack.severity} sx={{ width:'100%' }}>
           {snack.message}
         </Alert>
       </Snackbar>
